@@ -1,0 +1,32 @@
+############################################################
+# Dockerfile to build Server container images
+# Based on Ubuntu
+############################################################
+
+# Set the base image to Ubuntu
+FROM ubuntu
+
+# File Author / Maintainer
+MAINTAINER Ashish Kashinath
+
+# Usage: USER [UID]
+#USER ak7
+
+#Install Basic Stuff
+RUN apt-get update && apt-get install -y curl \
+vim
+RUN echo "Basic Installation Over!"
+
+# Create the default data directory
+RUN mkdir -p /data
+
+#Copying strings.txt from host to the container
+ADD strings.txt /data
+
+#Mounting the Volume
+VOLUME ["/data"]
+
+RUN ["gcc", "server.c", "-o server"]
+
+CMD ["./server", "/data/strings.txt", 8090]
+#ADD /data  

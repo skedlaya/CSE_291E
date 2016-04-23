@@ -1,0 +1,27 @@
+Apple
+Bat
+Cat
+Dog
+Elephant
+Fox
+Giraffe
+Hyena
+Ibis
+Jackal
+Koala
+Lion
+Monkey
+Nightingale
+Ostrich
+Panther
+Quail
+Rabbit
+Snake
+Tiger
+Uguisu
+Vulture
+Wolf
+X-Ray Tetra
+Yak
+Zebra
+
