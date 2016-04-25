@@ -1,6 +1,12 @@
 package rmi;
 
 import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 
 /** RMI skeleton
 
@@ -26,6 +32,20 @@ import java.net.*;
 */
 public class Skeleton<T>
 {
+	// Server interface class object
+	private Class<T> serverIntClass;
+	
+	//Server object
+	private T server;
+	
+	//IP address of the server
+	private InetSocketAddress inetSocketAddress;
+	
+	// Server socket
+	private ServerSocket serverSocket;
+	
+	// Flag to check if server has started
+	private boolean serverStarted = false;
     /** Creates a <code>Skeleton</code> with no initial server address. The
         address will be determined by the system when <code>start</code> is
         called. Equivalent to using <code>Skeleton(null)</code>.
@@ -46,8 +66,11 @@ public class Skeleton<T>
                                      <code>server</code> is <code>null</code>.
      */
     public Skeleton(Class<T> c, T server)
-    {
-        throw new UnsupportedOperationException("not implemented");
+    {   
+    	this.serverIntClass = c;
+    	this.server = server;
+    	this.inetSocketAddress = null;
+        //throw new UnsupportedOperationException("not implemented");
     }
 
     /** Creates a <code>Skeleton</code> with the given initial server address.
@@ -70,7 +93,16 @@ public class Skeleton<T>
      */
     public Skeleton(Class<T> c, T server, InetSocketAddress address)
     {
-        throw new UnsupportedOperationException("not implemented");
+    	this.serverIntClass = c;
+    	this.server = server;
+    	this.inetSocketAddress = null;
+    	if(!RMIException.checkRemoteInt(c)){
+    		throw new Error("The class server interface is not a remote interface.");
+    	}
+    	if((server == null)||(c == null)){
+    		throw new NullPointerException("Server or interface server class is null");
+    	}
+        //throw new UnsupportedOpertionException("not implemented");
     }
 
     /** Called when the listening thread exits.
@@ -126,6 +158,74 @@ public class Skeleton<T>
     {
     }
 
+    //Class ServerHandler
+    private class ServerHandler extends Thread{
+ 
+    	//Create a client 
+    	private Socket clientSocket;
+    	
+    	//Constructor
+    	public ServerHandler(Socket clientSocket){
+    	    this.clientSocket = clientSocket;	
+    	}
+    	
+        @Override
+        public void run() {
+        	ObjectOutputStream outputStream = null;
+        	try{
+        		//Outputsteam object
+        	    outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+        	    outputStream.flush();
+        	    
+        	    //Inputstream object
+        	    ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream());
+        	    
+        	    // Get argumnets for method invoke 
+        	    String methodName = (String) inputStream.readObject();
+        	    Class[] methodParamTypes = (Class[]) inputStream.readObject();
+        	    Object[] methodArgs = (Object[]) inputStream.readObject();
+        	    
+        	    // Get object corresponding to method requested by stub
+        	    
+        	    Method method = serverIntClass.getDeclaredMethod(methodName, methodParamTypes);
+        	    Object serverObject = method.invoke(server, methodArgs);
+        	    
+        	    // Send object back to stub
+        	    outputStream.writeObject(serverObject);
+        	    
+        	    clientSocket.close();
+        	}
+        	catch(InvocationTargetException exp){
+        		try {
+        			outputStream.writeObject(exp.getCause());
+                	} 
+        		catch (IOException expIO) {
+                    throw new Error(expIO.getMessage());
+                	}
+        	}
+        	catch (Exception Exp) {
+                try {
+                    outputStream.writeObject(Exp);
+                  	} 
+                catch (IOException expIO) {
+                    }
+            } 
+        	
+        	finally {
+                try {
+                        if(clientSocket != null && !clientSocket.isClosed()) {
+                        	clientSocket.close();
+                        }
+                  	} 
+                catch (IOException exp) {
+                        exp.getMessage();
+                    }
+            }
+        	
+        }    	
+}
+    
+    
     /** Starts the skeleton server.
 
         <p>
@@ -141,7 +241,46 @@ public class Skeleton<T>
      */
     public synchronized void start() throws RMIException
     {
-        throw new UnsupportedOperationException("not implemented");
+    	// Create address if null (depends on skeleton constructor)
+    	if(inetSocketAddress == null){
+    		inetSocketAddress = new InetSocketAddress(0);
+    	}
+    	
+    	// Exception if server has started
+    	if(serverStarted == true)
+    	    throw new RMIException("start(): Server has already started");
+    	
+    	// Create and bind listening socket
+    	// Throw RMI exception if it fails
+    	try {
+    		serverSocket = new ServerSocket();
+    		serverSocket.bind(inetSocketAddress);
+    	}
+    	catch(Throwable exp){
+    		throw new RMIException(exp.getLocalizedMessage());
+    	}
+    	
+        Thread t = new Thread() {
+            @Override 
+            public void run() {
+                serverStarted = true;
+                while(serverStarted){
+                	try{
+                		Socket clientSocket = serverSocket.accept();
+                		ServerHandler serverHandler = new ServerHandler(clientSocket);
+                		serverHandler.start();
+                	}
+                	catch(Throwable exp){
+                		throw new Error(exp.getLocalizedMessage());
+                	}
+                }
+            }
+            
+        };
+      
+        t.start();    	    
+    	    
+        //throw new UnsupportedOperationException("not implemented");
     }
 
     /** Stops the skeleton server, if it is already running.
@@ -155,6 +294,27 @@ public class Skeleton<T>
      */
     public synchronized void stop()
     {
-        throw new UnsupportedOperationException("not implemented");
+    	if(serverStarted == false)
+    		return;
+    	else{
+    		try{
+    			serverSocket.close();
+    			this.stopped(null);
+    		}
+    		catch(Throwable exp){
+    			this.stopped(exp);
+    		}
+    		
+    		serverStarted = false;
+    	}	
+
+    }
+    
+    public InetSocketAddress getROR(){
+    	if(serverSocket != null && serverSocket.isBound()){
+    		return new InetSocketAddress(serverSocket.getInetAddress(), serverSocket.getLocalPort());
+    	}
+    	
+    	return inetSocketAddress;
     }
 }

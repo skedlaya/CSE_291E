@@ -1,6 +1,15 @@
 package rmi;
 
 import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
 
 /** RMI stub factory.
 
@@ -17,6 +26,93 @@ import java.net.*;
  */
 public abstract class Stub
 {
+	private static class ClientHandler implements Serializable, InvocationHandler
+	{
+		
+		static final long serialVersionUID = 42L;
+		
+		/* Address the server */
+		private InetSocketAddress serverAddress;
+		
+
+		/* Constructor*/
+		public ClientHandler (InetSocketAddress serverAddress)
+		{
+			this.serverAddress = serverAddress;
+			
+		}
+		
+		private Object RemoteInvoke(Object proxy, Method method, Object[] args) throws RMIException, IOException
+		{
+			Socket clientSocket = new Socket();
+			Object fromServer = null;
+			ObjectOutputStream outputStream = null;
+			
+			try
+			{
+				clientSocket.connect(serverAddress);
+				
+        		//Outputsteam object
+        	    outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+        	    outputStream.flush();
+        	    
+        	    //Inputstream object
+        	    ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream());
+        	    
+        	    /* Preparing for Remote Invocation*/
+        	    outputStream.writeObject(method.getName());
+        	    outputStream.writeObject(method.getParameterTypes());
+        	    outputStream.writeObject(args);
+        	    
+        	    /* Getting Results from Remote Interface */
+        	    fromServer = inputStream.readObject();
+        	    clientSocket.close();
+
+			}
+			catch(Throwable exp)
+			{
+				throw new RMIException(exp);
+			}
+			
+			finally
+			{
+				if(clientSocket != null && !clientSocket.isClosed())
+					clientSocket.close();
+			}
+			
+			return fromServer;
+			
+		}
+		
+		private Object LocalInvoke(Object proxy, Method method, Object[] args) throws RMIException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+		{
+			/*Implement equals and hashCode? */
+			
+			/*Get a client handler */
+			
+			ClientHandler clienthandle = (ClientHandler) Proxy.getInvocationHandler(proxy);
+			
+			return method.invoke(clienthandle, args);
+		}
+		
+		
+		public Object invoke(Object proxy, Method method, Object[] args) throws RMIException
+		{
+			try
+			{
+				if(RMIException.checkRMI(method))
+					return RemoteInvoke(proxy, method, args);
+				else
+					return LocalInvoke(proxy, method, args);
+			
+			}
+			catch(Throwable exp)
+			{
+				throw new RMIException(exp);
+			}
+		}
+		
+	}
     /** Creates a stub, given a skeleton with an assigned adress.
 
         <p>
@@ -48,7 +144,26 @@ public abstract class Stub
     public static <T> T create(Class<T> c, Skeleton<T> skeleton)
         throws UnknownHostException
     {
-        throw new UnsupportedOperationException("not implemented");
+    	InetSocketAddress checkROR = skeleton.getROR();
+    	
+    	if (checkROR == null)
+    			throw new IllegalStateException("ROR is NULL");
+    	
+    	/*Implement UnknownHostException here */
+    	
+    	/*Null Pointer Exception */
+    	if ((c == null)||(skeleton == null))
+    			throw new NullPointerException("Arguments to create are NULL!!");
+        
+    	/* if c is not a remote interface */
+    	if(!RMIException.checkRemoteInt(c))
+    	{
+    		throw new Error ("c is not a remote interface");
+    	}
+    	
+    	ClientHandler cli = new ClientHandler(checkROR);
+    	return (T) Proxy.newProxyInstance(c.getClassLoader(), new Class[] {c}, cli);
+    	
     }
 
     /** Creates a stub, given a skeleton with an assigned address and a hostname
@@ -84,7 +199,27 @@ public abstract class Stub
     public static <T> T create(Class<T> c, Skeleton<T> skeleton,
                                String hostname)
     {
-        throw new UnsupportedOperationException("not implemented");
+    	InetSocketAddress checkROR = skeleton.getROR();
+    	
+    	if (checkROR == null)
+    			throw new IllegalStateException("ROR is NULL");
+    	
+    	
+    	
+    	/*Null Pointer Exception */
+    	if ((c == null)||(skeleton == null)||(hostname == null))
+    			throw new NullPointerException("Arguments to create are NULL!!");
+        
+    	/* if c is not a remote interface */
+    	if(!RMIException.checkRemoteInt(c))
+    	{
+    		throw new Error ("c is not a remote interface");
+    	}
+    	
+    	/* Check for failures here */
+    	
+    	ClientHandler cli = new ClientHandler(checkROR);
+    	return (T) Proxy.newProxyInstance(c.getClassLoader(), new Class[] {c}, cli);
     }
 
     /** Creates a stub, given the address of a remote server.
@@ -106,6 +241,19 @@ public abstract class Stub
      */
     public static <T> T create(Class<T> c, InetSocketAddress address)
     {
-        throw new UnsupportedOperationException("not implemented");
-    }
+    	/*Null Pointer Exception */
+    	if ((c == null)||(address == null))
+    			throw new NullPointerException("Arguments to create are NULL!!");
+        
+    	/* if c is not a remote interface */
+    	if(!RMIException.checkRemoteInt(c))
+    	{
+    		throw new Error ("c is not a remote interface");
+    	}
+    	
+    	/* Check for failures here */
+    	
+    	ClientHandler cli = new ClientHandler(address);
+    	return (T) Proxy.newProxyInstance(c.getClassLoader(), new Class[] {c}, cli);
+   }
 }
