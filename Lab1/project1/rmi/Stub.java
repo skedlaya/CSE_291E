@@ -50,7 +50,7 @@ public abstract class Stub
 			
 			try
 			{
-				clientSocket.connect(serverAddress);
+				clientSocket.connect(this.serverAddress);
 				
         		//Outputsteam object
         	    outputStream = new ObjectOutputStream(clientSocket.getOutputStream());

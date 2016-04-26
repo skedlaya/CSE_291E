@@ -1,6 +1,7 @@
 package rmi;
 
 import java.net.*;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -67,9 +68,10 @@ public class Skeleton<T>
      */
     public Skeleton(Class<T> c, T server)
     {   
-    	this.serverIntClass = c;
-    	this.server = server;
-    	this.inetSocketAddress = null;
+    	this(c,server,null);
+    	//this.serverIntClass = c;
+    	//this.server = server;
+    	//this.inetSocketAddress = null;
         //throw new UnsupportedOperationException("not implemented");
     }
 
@@ -241,6 +243,7 @@ public class Skeleton<T>
      */
     public synchronized void start() throws RMIException
     {
+    	
     	// Create address if null (depends on skeleton constructor)
     	if(inetSocketAddress == null){
     		inetSocketAddress = new InetSocketAddress(0);
@@ -260,15 +263,23 @@ public class Skeleton<T>
     		throw new RMIException(exp.getLocalizedMessage());
     	}
     	
-        Thread t = new Thread() {
+        Thread t = new Thread(new Runnable() {
             @Override 
             public void run() {
                 serverStarted = true;
-                while(serverStarted){
+                while(serverStarted && !serverSocket.isClosed()){
+                	System.out.println("Waiting for connection!!!!");
                 	try{
                 		Socket clientSocket = serverSocket.accept();
-                		ServerHandler serverHandler = new ServerHandler(clientSocket);
-                		serverHandler.start();
+                		System.out.println("thread started!!!!");
+                		//ServerHandler serverHandler = new ServerHandler(clientSocket);
+                		//serverHandler.start();
+                		new ServerHandler(clientSocket).start();
+                		
+                	}catch(SocketException e) {
+                    } 
+                	catch(Exception ee){
+                	
                 	}
                 	catch(Throwable exp){
                 		throw new Error(exp.getLocalizedMessage());
@@ -276,7 +287,7 @@ public class Skeleton<T>
                 }
             }
             
-        };
+        });
       
         t.start();    	    
     	    
