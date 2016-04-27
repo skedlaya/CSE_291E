@@ -97,7 +97,7 @@ public class Skeleton<T>
     {
     	this.serverIntClass = c;
     	this.server = server;
-    	this.inetSocketAddress = null;
+    	this.inetSocketAddress = address;
     	if(!RMIException.checkRemoteInt(c)){
     		throw new Error("The class server interface is not a remote interface.");
     	}
