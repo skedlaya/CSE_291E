@@ -50,6 +50,8 @@ public abstract class Stub
 			
 			try
 			{
+				// Check creation
+				clientSocket = new Socket();
 				clientSocket.connect(this.serverAddress);
 				
         		//Outputsteam object
@@ -87,14 +89,54 @@ public abstract class Stub
 		private Object LocalInvoke(Object proxy, Method method, Object[] args) throws RMIException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 		{
 			/*Implement equals and hashCode? */
+			if(method.getName().equals("equals")){
+				return equals(proxy,method,args);
+			}
 			
 			/*Get a client handler */
 			
 			ClientHandler clienthandle = (ClientHandler) Proxy.getInvocationHandler(proxy);
 			
+			//Hashcode. Check properly
+			if(method.getName().equals("hashCode")){
+				return clienthandle.serverAddress.hashCode() + proxy.getClass().hashCode();
+			}
+			
 			return method.invoke(clienthandle, args);
 		}
-		
+        private Boolean equals(Object proxy, Method method, Object[] args) {
+            if(args.length != 1) {
+                return Boolean.FALSE;
+            }
+            
+            Object obj = args[0];
+            if(obj == null) {
+                return Boolean.FALSE;
+            }
+            
+            // 1. check proxy class
+            if(!Proxy.isProxyClass(obj.getClass())) {
+                return Boolean.FALSE;
+            }
+            
+            // 2. check class type
+            if(!proxy.getClass().equals(obj.getClass())) {
+                return Boolean.FALSE;
+            }
+            
+            // 3. check handler type
+            InvocationHandler handler = Proxy.getInvocationHandler(obj);
+            if(!(handler instanceof ClientHandler)) {
+                return Boolean.FALSE;
+            }
+            
+            // 4. check remote address
+            if(!serverAddress.equals(((ClientHandler) handler).serverAddress)) {
+                return Boolean.FALSE;
+            }
+            
+            return Boolean.TRUE;
+        }	
 		
 		public Object invoke(Object proxy, Method method, Object[] args) throws RMIException
 		{
@@ -144,16 +186,17 @@ public abstract class Stub
     public static <T> T create(Class<T> c, Skeleton<T> skeleton)
         throws UnknownHostException
     {
+    	
+    	/*Null Pointer Exception */
+    	if ((c == null)||(skeleton == null))
+    			throw new NullPointerException("Arguments to create are NULL!!");
+    	
     	InetSocketAddress checkROR = skeleton.getROR();
     	
     	if (checkROR == null)
     			throw new IllegalStateException("ROR is NULL");
     	
     	/*Implement UnknownHostException here */
-    	
-    	/*Null Pointer Exception */
-    	if ((c == null)||(skeleton == null))
-    			throw new NullPointerException("Arguments to create are NULL!!");
         
     	/* if c is not a remote interface */
     	if(!RMIException.checkRemoteInt(c))
@@ -199,22 +242,22 @@ public abstract class Stub
     public static <T> T create(Class<T> c, Skeleton<T> skeleton,
                                String hostname)
     {
-    	InetSocketAddress checkROR = skeleton.getROR();
-    	
-    	if (checkROR == null)
-    			throw new IllegalStateException("ROR is NULL");
-    	
-    	
-    	
     	/*Null Pointer Exception */
     	if ((c == null)||(skeleton == null)||(hostname == null))
     			throw new NullPointerException("Arguments to create are NULL!!");
-        
+
     	/* if c is not a remote interface */
     	if(!RMIException.checkRemoteInt(c))
     	{
     		throw new Error ("c is not a remote interface");
     	}
+    	
+    	InetSocketAddress getRORaddress = skeleton.getROR();
+    	
+    	InetSocketAddress checkROR = new InetSocketAddress(hostname, getRORaddress.getPort());
+    	
+    	if (checkROR == null)
+    			throw new IllegalStateException("ROR is NULL");
     	
     	/* Check for failures here */
     	

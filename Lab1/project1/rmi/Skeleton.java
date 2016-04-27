@@ -243,16 +243,20 @@ public class Skeleton<T>
      */
     public synchronized void start() throws RMIException
     {
+    	System.out.println("1. Entered skeleton start!!!!");
     	
     	// Create address if null (depends on skeleton constructor)
     	if(inetSocketAddress == null){
     		inetSocketAddress = new InetSocketAddress(0);
     	}
-    	
+
+    	System.out.println("2. Entered skeleton start!!!!");
+
     	// Exception if server has started
     	if(serverStarted == true)
     	    throw new RMIException("start(): Server has already started");
-    	
+    	System.out.println("3. Entered skeleton start!!!!");
+
     	// Create and bind listening socket
     	// Throw RMI exception if it fails
     	try {
@@ -260,13 +264,16 @@ public class Skeleton<T>
     		serverSocket.bind(inetSocketAddress);
     	}
     	catch(Throwable exp){
-    		throw new RMIException(exp.getLocalizedMessage());
+    		throw new RMIException("Server socket creation failed!!!!!!");
     	}
     	
-        Thread t = new Thread(new Runnable() {
+    	System.out.println("4. Entered skeleton start!!!!");
+    
+        new Thread(new Runnable() {
             @Override 
             public void run() {
                 serverStarted = true;
+            	System.out.println("5. Entered skeleton start!!!!");
                 while(serverStarted && !serverSocket.isClosed()){
                 	System.out.println("Waiting for connection!!!!");
                 	try{
@@ -287,9 +294,9 @@ public class Skeleton<T>
                 }
             }
             
-        });
+        }).start();
       
-        t.start();    	    
+       // t.start();    	    
     	    
         //throw new UnsupportedOperationException("not implemented");
     }
