@@ -173,6 +173,7 @@ public class Skeleton<T>
     	
         @Override
         public void run() {
+        	System.out.println("Entered serverHandler block");
         	ObjectOutputStream outputStream = null;
         	try{
         		//Outputsteam object
@@ -215,9 +216,11 @@ public class Skeleton<T>
         	
         	finally {
                 try {
+                	    System.out.println("In final block1");
                         if(clientSocket != null && !clientSocket.isClosed()) {
                         	clientSocket.close();
                         }
+                    	System.out.println("In final block2");
                   	} 
                 catch (IOException exp) {
                         exp.getMessage();
@@ -268,22 +271,25 @@ public class Skeleton<T>
     	}
     	
     	System.out.println("4. Entered skeleton start!!!!");
-    
+    	serverStarted = true;
         new Thread(new Runnable() {
             @Override 
             public void run() {
-                serverStarted = true;
             	System.out.println("5. Entered skeleton start!!!!");
                 while(serverStarted && !serverSocket.isClosed()){
                 	System.out.println("Waiting for connection!!!!");
                 	try{
+                		System.out.println("Skeleton Port number is:"+ inetSocketAddress.getPort());
                 		Socket clientSocket = serverSocket.accept();
                 		System.out.println("thread started!!!!");
                 		//ServerHandler serverHandler = new ServerHandler(clientSocket);
                 		//serverHandler.start();
                 		new ServerHandler(clientSocket).start();
                 		
+                		System.out.println("After serverhandler thread creation in start");
+                		
                 	}catch(SocketException e) {
+                		System.out.println("Socket Exception!!!!");
                     } 
                 	catch(Exception ee){
                 	
@@ -312,14 +318,18 @@ public class Skeleton<T>
      */
     public synchronized void stop()
     {
+    	System.out.println("Entered stop"+serverStarted);
     	if(serverStarted == false)
     		return;
     	else{
     		try{
     			serverSocket.close();
+    			if(serverSocket.isClosed())
+    				System.out.println("serverSocket is closed successfullt checking is closed");
     			this.stopped(null);
     		}
     		catch(Throwable exp){
+    			System.out.println("In stop exception");
     			this.stopped(exp);
     		}
     		
