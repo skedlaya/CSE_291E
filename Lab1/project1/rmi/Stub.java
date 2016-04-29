@@ -42,11 +42,12 @@ public abstract class Stub
 			
 		}
 		
-		private Object RemoteInvoke(Object proxy, Method method, Object[] args) throws RMIException, IOException
+		private Object RemoteInvoke(Object proxy, Method method, Object[] args) throws Throwable
 		{
 			Socket clientSocket = new Socket();
 			Object fromServer = null;
 			ObjectOutputStream outputStream = null;
+			Integer result = null;
 			
 			try
 			{
@@ -67,11 +68,19 @@ public abstract class Stub
         	    outputStream.writeObject(args);
         	    
         	    /* Getting Results from Remote Interface */
+        	    //try{
+        	    result = (Integer) inputStream.readObject();
         	    fromServer = inputStream.readObject();
+        	    
+        	    /*}
+        	    catch(Throwable ee){
+        	    	if(fromServer.equals(Throwable.class))
+        	    		throw new RMIException(ee);
+        	    }*/
         	    clientSocket.close();
 
 			}
-			catch(Throwable exp)
+			catch(Exception exp)
 			{
 				throw new RMIException(exp);
 			}
@@ -81,7 +90,8 @@ public abstract class Stub
 				if(clientSocket != null && !clientSocket.isClosed())
 					clientSocket.close();
 			}
-			
+			if(result == Skeleton.RESULT_ERR)
+				throw (Throwable) fromServer;
 			return fromServer;
 			
 		}
@@ -138,7 +148,7 @@ public abstract class Stub
             return Boolean.TRUE;
         }	
 		
-		public Object invoke(Object proxy, Method method, Object[] args) throws RMIException
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
 		{
 			try
 			{
@@ -148,9 +158,10 @@ public abstract class Stub
 					return LocalInvoke(proxy, method, args);
 			
 			}
-			catch(Throwable exp)
+			catch(Exception exp)
 			{
-				throw new RMIException(exp);
+				throw exp;
+				//throw new RMIException(exp);
 			}
 		}
 		

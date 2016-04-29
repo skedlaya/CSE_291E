@@ -47,6 +47,10 @@ public class Skeleton<T>
 	
 	// Flag to check if server has started
 	private boolean serverStarted = false;
+	
+    public static final int RESULT_OK   = 0;
+    
+    public static final int RESULT_ERR  = 1;
     /** Creates a <code>Skeleton</code> with no initial server address. The
         address will be determined by the system when <code>start</code> is
         called. Equivalent to using <code>Skeleton(null)</code>.
@@ -194,12 +198,14 @@ public class Skeleton<T>
         	    Object serverObject = method.invoke(server, methodArgs);
         	    
         	    // Send object back to stub
+        	    outputStream.writeObject(RESULT_OK);
         	    outputStream.writeObject(serverObject);
         	    
         	    clientSocket.close();
         	}
         	catch(InvocationTargetException exp){
         		try {
+        			outputStream.writeObject(RESULT_ERR);
         			outputStream.writeObject(exp.getCause());
                 	} 
         		catch (IOException expIO) {
@@ -208,6 +214,7 @@ public class Skeleton<T>
         	}
         	catch (Exception Exp) {
                 try {
+        			outputStream.writeObject(RESULT_ERR);
                     outputStream.writeObject(Exp);
                   	} 
                 catch (IOException expIO) {
