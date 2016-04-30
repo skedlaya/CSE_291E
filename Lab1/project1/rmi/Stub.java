@@ -201,6 +201,19 @@ public abstract class Stub
     	/*Null Pointer Exception */
     	if ((c == null)||(skeleton == null))
     			throw new NullPointerException("Arguments to create are NULL!!");
+			
+        if(!c.isInterface()){
+                throw new Error("The class server interface is not a interface.");
+        }
+
+        
+    	/* if c is not a remote interface */
+    	if(!RMIException.checkRemoteInt(c))
+    	{
+    		throw new Error ("c is not a remote interface");
+    	}
+
+
     	
     	InetSocketAddress checkROR = skeleton.getROR();
     	
@@ -208,12 +221,6 @@ public abstract class Stub
     			throw new IllegalStateException("ROR is NULL");
     	
     	/*Implement UnknownHostException here */
-        
-    	/* if c is not a remote interface */
-    	if(!RMIException.checkRemoteInt(c))
-    	{
-    		throw new Error ("c is not a remote interface");
-    	}
     	
     	ClientHandler cli = new ClientHandler(checkROR);
     	return (T) Proxy.newProxyInstance(c.getClassLoader(), new Class[] {c}, cli);
@@ -256,6 +263,10 @@ public abstract class Stub
     	/*Null Pointer Exception */
     	if ((c == null)||(skeleton == null)||(hostname == null))
     			throw new NullPointerException("Arguments to create are NULL!!");
+
+        if(!c.isInterface()){
+                throw new Error("The class server interface is not a interface.");
+        }
 
     	/* if c is not a remote interface */
     	if(!RMIException.checkRemoteInt(c))
@@ -305,6 +316,11 @@ public abstract class Stub
     		throw new Error ("c is not a remote interface");
     	}
     	
+        if(!c.isInterface()){
+                throw new Error("The class server interface is not a interface.");
+        }
+
+
     	/* Check for failures here */
     	
     	ClientHandler cli = new ClientHandler(address);

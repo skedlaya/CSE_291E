@@ -77,6 +77,18 @@ public class Skeleton<T>
     	//this.server = server;
     	//this.inetSocketAddress = null;
         //throw new UnsupportedOperationException("not implemented");
+        if(!RMIException.checkRemoteInt(c)){
+                throw new Error("The class server interface is not a remote interface.");
+        }
+
+        if((server == null)||(c == null)){
+                throw new NullPointerException("Server or interface server class is null");
+        }
+
+        if(!c.isInterface()){
+                throw new Error("The class server interface is not a interface.");
+        }
+
     }
 
     /** Creates a <code>Skeleton</code> with the given initial server address.
@@ -108,6 +120,11 @@ public class Skeleton<T>
     	if((server == null)||(c == null)){
     		throw new NullPointerException("Server or interface server class is null");
     	}
+
+        if(!c.isInterface()){
+                throw new Error("The class server interface is not a interface.");
+        }
+
         //throw new UnsupportedOpertionException("not implemented");
     }
 
