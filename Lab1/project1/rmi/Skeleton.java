@@ -212,13 +212,19 @@ public class Skeleton<T>
         	    // Get object corresponding to method requested by stub
         	    
         	    Method method = serverIntClass.getDeclaredMethod(methodName, methodParamTypes);
-        	    Object serverObject = method.invoke(server, methodArgs);
         	    
+        	   
+        	    Object serverObject = method.invoke(server, methodArgs);
         	    // Send object back to stub
         	    outputStream.writeObject(RESULT_OK);
         	    outputStream.writeObject(serverObject);
+        	   
+        		
+        	    
         	    
         	    clientSocket.close();
+        	}
+        	catch (NoSuchMethodException noSuchExp){
         	}
         	catch(InvocationTargetException exp){
         		try {
@@ -231,8 +237,8 @@ public class Skeleton<T>
         	}
         	catch (Exception Exp) {
                 try {
-        			outputStream.writeObject(RESULT_ERR);
-                    outputStream.writeObject(Exp);
+        			outputStream.writeObject(RESULT_OK);
+                    outputStream.writeObject(Exp);   
                   	} 
                 catch (IOException expIO) {
                     }
@@ -274,7 +280,7 @@ public class Skeleton<T>
     	
     	// Create address if null (depends on skeleton constructor)
     	if(inetSocketAddress == null){
-    		inetSocketAddress = new InetSocketAddress(0);
+    		inetSocketAddress = new InetSocketAddress(7000);
     	}
 
     	System.out.println("2. Entered skeleton start!!!!");
@@ -293,6 +299,7 @@ public class Skeleton<T>
     	catch(Throwable exp){
     		throw new RMIException("Server socket creation failed!!!!!!");
     	}
+    	
     	
     	System.out.println("4. Entered skeleton start!!!!");
     	serverStarted = true;

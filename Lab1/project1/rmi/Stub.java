@@ -24,8 +24,11 @@ import java.lang.reflect.Proxy;
     same interface and carry the same remote server address - and would
     therefore connect to the same skeleton. Stubs are serializable.
  */
-public abstract class Stub
+public abstract class Stub<T>
 {
+	// Server interface class object
+	public static String classString = null;
+	
 	private static class ClientHandler implements Serializable, InvocationHandler
 	{
 		
@@ -90,8 +93,9 @@ public abstract class Stub
 				if(clientSocket != null && !clientSocket.isClosed())
 					clientSocket.close();
 			}
-			if(result == Skeleton.RESULT_ERR)
-				throw (Throwable) fromServer;
+			if(result == Skeleton.RESULT_ERR){
+				throw (Throwable) fromServer;}
+
 			return fromServer;
 			
 		}
@@ -110,6 +114,12 @@ public abstract class Stub
 			//Hashcode. Check properly
 			if(method.getName().equals("hashCode")){
 				return clienthandle.serverAddress.hashCode() + proxy.getClass().hashCode();
+			}
+			
+			//toString.
+			if(method.getName().equals("toString")){
+				return classString + clienthandle.serverAddress.toString() 
+			    + clienthandle.serverAddress.getHostString();
 			}
 			
 			return method.invoke(clienthandle, args);
@@ -197,7 +207,7 @@ public abstract class Stub
     public static <T> T create(Class<T> c, Skeleton<T> skeleton)
         throws UnknownHostException
     {
-    	
+    	classString = c.getSimpleName();
     	/*Null Pointer Exception */
     	if ((c == null)||(skeleton == null))
     			throw new NullPointerException("Arguments to create are NULL!!");
