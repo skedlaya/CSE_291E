@@ -283,13 +283,15 @@ public abstract class Stub<T>
     	{
     		throw new Error ("c is not a remote interface");
     	}
-    	
-    	InetSocketAddress getRORaddress = skeleton.getROR();
+
+	InetSocketAddress getRORaddress = skeleton.getROR();
+	if (getRORaddress == null)
+		throw new IllegalStateException("getRORaddress is NULL");
     	
     	InetSocketAddress checkROR = new InetSocketAddress(hostname, getRORaddress.getPort());
     	
     	if (checkROR == null)
-    			throw new IllegalStateException("ROR is NULL");
+		throw new IllegalStateException("checkROR is NULL");
     	
     	/* Check for failures here */
     	
