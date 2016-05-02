@@ -6,20 +6,20 @@ public class PingPongServer extends Exception implements ServerInterface
 {
 	
 	static InetSocketAddress address = new InetSocketAddress(5000);
-	static Skeleton skeleton = new Skeleton(ServerInterface.class, new PingPongServer(), address);
+	static Skeleton skeleton;
+	//static Skeleton skeleton = new Skeleton(ServerInterface.class, new PingPongServer(), address);
 	int count = 0;
 	public static void main(String[] args){
-		try{
-			skeleton.start();
-		}
+	
+	PingServerFactory obj = new PingServerFactory();
+	skeleton = obj. makePingServer();	
 
-		catch(RMIException e){
-			System.out.println("error in skeleton.start");
-		}
 	}
 	public String WritePong(String s) throws RMIException
 	{
-		if (count == 4){
+	
+		System.out.println("inside writepong");
+	if (count == 4){
 			skeleton.stop();
 			skeleton = null;
 		}
