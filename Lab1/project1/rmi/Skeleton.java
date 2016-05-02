@@ -194,7 +194,6 @@ public class Skeleton<T>
     	
         @Override
         public void run() {
-        	System.out.println("Entered serverHandler block");
         	ObjectOutputStream outputStream = null;
         	try{
         		//Outputsteam object
@@ -225,6 +224,7 @@ public class Skeleton<T>
         	    clientSocket.close();
         	}
         	catch (NoSuchMethodException noSuchExp){
+			service_error(new RMIException(noSuchExp));
         	}
         	catch(InvocationTargetException exp){
         		try {
@@ -232,7 +232,8 @@ public class Skeleton<T>
         			outputStream.writeObject(exp.getCause());
                 	} 
         		catch (IOException expIO) {
-                    throw new Error(expIO.getMessage());
+				service_error(new RMIException(expIO));
+		               	throw new Error(expIO.getMessage());
                 	}
         	}
         	catch (Exception Exp) {
@@ -241,16 +242,15 @@ public class Skeleton<T>
                     outputStream.writeObject(Exp);   
                   	} 
                 catch (IOException expIO) {
+			service_error(new RMIException(expIO));
                     }
             } 
         	
         	finally {
                 try {
-                	    System.out.println("In final block1");
-                        if(clientSocket != null && !clientSocket.isClosed()) {
+			if(clientSocket != null && !clientSocket.isClosed()) {
                         	clientSocket.close();
                         }
-                    	System.out.println("In final block2");
                   	} 
                 catch (IOException exp) {
                         exp.getMessage();
@@ -276,20 +276,17 @@ public class Skeleton<T>
      */
     public synchronized void start() throws RMIException
     {
-    	System.out.println("1. Entered skeleton start!!!!");
     	
     	// Create address if null (depends on skeleton constructor)
     	if(inetSocketAddress == null){
     		inetSocketAddress = new InetSocketAddress(7000);
     	}
 
-    	System.out.println("2. Entered skeleton start!!!!");
 
     	// Exception if server has started
     	if(serverStarted == true)
     	    throw new RMIException("start(): Server has already started");
-    	System.out.println("3. Entered skeleton start!!!!");
-
+ 
     	// Create and bind listening socket
     	// Throw RMI exception if it fails
     	try {
@@ -301,31 +298,26 @@ public class Skeleton<T>
     	}
     	
     	
-    	System.out.println("4. Entered skeleton start!!!!");
     	serverStarted = true;
         new Thread(new Runnable() {
             @Override 
             public void run() {
-            	System.out.println("5. Entered skeleton start!!!!");
                 while(serverStarted && !serverSocket.isClosed()){
-                	System.out.println("Waiting for connection!!!!");
-                	try{
-                		System.out.println("Skeleton Port number is:"+ inetSocketAddress.getPort());
+                 	try{
                 		Socket clientSocket = serverSocket.accept();
-                		System.out.println("thread started!!!!");
                 		//ServerHandler serverHandler = new ServerHandler(clientSocket);
                 		//serverHandler.start();
                 		new ServerHandler(clientSocket).start();
                 		
-                		System.out.println("After serverhandler thread creation in start");
                 		
                 	}catch(SocketException e) {
-                		System.out.println("Socket Exception!!!!");
+ 				service_error(new RMIException(e));
                     } 
                 	catch(Exception ee){
-                	
+				service_error(new RMIException(ee));                	
                 	}
                 	catch(Throwable exp){
+				service_error(new RMIException(exp));
                 		throw new Error(exp.getLocalizedMessage());
                 	}
                 }
@@ -349,18 +341,14 @@ public class Skeleton<T>
      */
     public synchronized void stop()
     {
-    	System.out.println("Entered stop"+serverStarted);
     	if(serverStarted == false)
     		return;
     	else{
     		try{
     			serverSocket.close();
-    			if(serverSocket.isClosed())
-    				System.out.println("serverSocket is closed successfullt checking is closed");
     			this.stopped(null);
     		}
     		catch(Throwable exp){
-    			System.out.println("In stop exception");
     			this.stopped(exp);
     		}
     		
